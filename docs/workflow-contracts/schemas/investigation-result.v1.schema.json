@@ -1,0 +1,428 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://not-my-problem.local/schemas/investigation-result.v1.schema.json",
+  "title": "Investigation Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_metadata",
+    "findings",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_metadata": {
+      "$ref": "#/$defs/run_metadata"
+    },
+    "findings": {
+      "$ref": "#/$defs/findings"
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "short_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "repository_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "run_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "job_id",
+        "issue_id",
+        "github_issue_number",
+        "base_commit_sha",
+        "issue_updated_at",
+        "completed_at",
+        "model",
+        "agent_profile",
+        "prompt_version"
+      ],
+      "properties": {
+        "run_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "job_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "issue_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "github_issue_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "base_commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40,64}$"
+        },
+        "issue_updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "model": {
+          "$ref": "#/$defs/identifier"
+        },
+        "agent_profile": {
+          "$ref": "#/$defs/identifier"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/identifier"
+        }
+      }
+    },
+    "findings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conclusion",
+        "summary",
+        "reproduction",
+        "affected_areas",
+        "recommended_implementation",
+        "risk",
+        "open_questions",
+        "confidence"
+      ],
+      "properties": {
+        "conclusion": {
+          "enum": [
+            "CONFIRMED_ROOT_CAUSE",
+            "PROBABLE_ROOT_CAUSE",
+            "INCONCLUSIVE",
+            "NEEDS_INFORMATION"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/short_text"
+        },
+        "root_cause": {
+          "$ref": "#/$defs/root_cause"
+        },
+        "reproduction": {
+          "$ref": "#/$defs/reproduction"
+        },
+        "affected_areas": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/affected_area"
+          }
+        },
+        "recommended_implementation": {
+          "$ref": "#/$defs/recommended_implementation"
+        },
+        "risk": {
+          "$ref": "#/$defs/risk"
+        },
+        "open_questions": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/short_text"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "conclusion": {
+                "enum": [
+                  "CONFIRMED_ROOT_CAUSE",
+                  "PROBABLE_ROOT_CAUSE"
+                ]
+              }
+            },
+            "required": [
+              "conclusion"
+            ]
+          },
+          "then": {
+            "required": [
+              "root_cause"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "conclusion": {
+                "const": "NEEDS_INFORMATION"
+              }
+            },
+            "required": [
+              "conclusion"
+            ]
+          },
+          "then": {
+            "properties": {
+              "open_questions": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "root_cause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/short_text"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "description"
+      ],
+      "dependentRequired": {
+        "line_end": [
+          "line_start"
+        ]
+      },
+      "properties": {
+        "type": {
+          "enum": [
+            "CODE",
+            "TEST",
+            "LOG",
+            "COMMAND",
+            "ISSUE_CONTEXT",
+            "DOCUMENTATION"
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/short_text"
+        },
+        "file": {
+          "$ref": "#/$defs/repository_path"
+        },
+        "line_start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "line_end": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "steps"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "REPRODUCED",
+            "PARTIALLY_REPRODUCED",
+            "NOT_REPRODUCED",
+            "NOT_ATTEMPTED"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/short_text"
+          }
+        },
+        "expected": {
+          "$ref": "#/$defs/short_text"
+        },
+        "observed": {
+          "$ref": "#/$defs/short_text"
+        },
+        "notes": {
+          "$ref": "#/$defs/short_text"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "REPRODUCED"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "expected",
+              "observed"
+            ],
+            "properties": {
+              "steps": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "affected_area": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "files",
+        "reason"
+      ],
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/identifier"
+        },
+        "files": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/repository_path"
+          }
+        },
+        "reason": {
+          "$ref": "#/$defs/short_text"
+        }
+      }
+    },
+    "recommended_implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "steps",
+        "tests"
+      ],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/short_text"
+        },
+        "steps": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/short_text"
+          }
+        },
+        "tests": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/short_text"
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "scope",
+        "concerns"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ]
+        },
+        "scope": {
+          "$ref": "#/$defs/short_text"
+        },
+        "concerns": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/short_text"
+          }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "artifact_id"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "INVESTIGATION_LOG",
+            "COMMAND_LOG",
+            "TEST_LOG",
+            "OTHER"
+          ]
+        },
+        "artifact_id": {
+          "$ref": "#/$defs/identifier"
+        }
+      }
+    }
+  }
+}
+
