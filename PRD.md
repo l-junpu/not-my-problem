@@ -387,14 +387,12 @@ Workflow Orchestrator
                  └─ update issue workflow state
 ```
 
-Successful investigation should produce a structured result containing at minimum:
+Successful investigation should produce a compact structured result containing at minimum:
 
-- probable root cause,
-- affected files/components,
-- reproduction notes where available,
-- recommended implementation approach,
-- expected risk/scope,
-- confidence level.
+- a conclusion and concise summary,
+- one overall confidence level.
+
+When the agent identifies a confirmed or probable cause, the result also contains a diagnosis with suspected repository files and the reason each file is implicated. Reproduction notes and open questions are included only when applicable. Trusted run metadata and artifact relationships are stored by the worker outside the agent-authored result.
 
 The issue then transitions to `INVESTIGATION_COMPLETE` or `AWAITING_IMPLEMENTATION_APPROVAL`.
 
@@ -681,8 +679,7 @@ Responsibilities:
 - inspect repository context,
 - reproduce the issue where possible,
 - identify probable root cause,
-- identify affected components/files,
-- propose an implementation plan.
+- identify suspected files and explain why each is implicated.
 
 ### 15.3 Implementation Agent
 

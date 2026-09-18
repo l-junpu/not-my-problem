@@ -91,7 +91,7 @@ The accepted transition contracts are maintained in:
 - `docs/workflow-contracts/job-state-transitions.md`;
 - `docs/workflow-contracts/roles-and-permissions.md`;
 - `docs/workflow-contracts/investigation-result.md`;
-- `docs/workflow-contracts/schemas/investigation-result.v1.schema.json`.
+- `docs/workflow-contracts/schemas/investigation-result.v2.schema.json` (with v1 retained for historical compatibility).
 
 At minimum, define transitions equivalent to:
 
@@ -308,7 +308,8 @@ Verification gate:
 - Unexpected workspace changes fail validation.
 - Cancellation stops execution at a safe checkpoint.
 - A crash preserves logs and produces the expected failed/recoverable state.
-- A successful report contains root cause, affected components/files, reproduction notes, recommended approach, risk/scope, and confidence.
+- A successful report contains a conclusion, concise summary, and confidence. Confirmed or probable conclusions also contain a diagnosis with suspected files and a reason for each; reproduction notes and open questions are included only when applicable.
+- Trusted run metadata and artifact relationships are recorded by the worker outside the agent-authored result.
 
 ### Step 13 — Run the MVP 1 acceptance suite
 

@@ -120,7 +120,7 @@ Job completion and its issue transition must be idempotent. If they cannot be pe
 - Creating the agent run, job, and outbox message occurs in one database transaction.
 - Job events are appended to the immutable audit log.
 - Direct job-state updates outside the job transition service are forbidden.
-- A job result records the model, agent profile, prompt version, base commit, worker, timing, and artifact references.
+- The authoritative run and job records store the model, agent profile, prompt version, base commit, worker, timing, and artifact references outside the agent-authored result.
 - Terminal state does not prevent later append-only artifact-upload metadata, but it prevents changes to execution state or result meaning.
 
 ## Verification Checklist

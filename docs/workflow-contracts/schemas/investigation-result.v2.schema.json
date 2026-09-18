@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://not-my-problem.local/schemas/investigation-result.v2.schema.json",
+  "title": "Investigation Result v2",
+  "description": "The agent-authored findings from an investigation. Trusted run, job, model, commit, timing, and artifact metadata are stored by the worker outside this payload.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "conclusion", "summary", "confidence"],
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "conclusion": {
+      "enum": ["CONFIRMED_ROOT_CAUSE", "PROBABLE_ROOT_CAUSE", "INCONCLUSIVE", "NEEDS_INFORMATION"]
+    },
+    "summary": { "$ref": "#/$defs/short_text" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "diagnosis": { "$ref": "#/$defs/diagnosis" },
+    "reproduction": { "$ref": "#/$defs/reproduction" },
+    "open_questions": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/short_text" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "conclusion": { "enum": ["CONFIRMED_ROOT_CAUSE", "PROBABLE_ROOT_CAUSE"] }
+        },
+        "required": ["conclusion"]
+      },
+      "then": { "required": ["diagnosis"] }
+    },
+    {
+      "if": {
+        "properties": { "conclusion": { "const": "NEEDS_INFORMATION" } },
+        "required": ["conclusion"]
+      },
+      "then": {
+        "required": ["open_questions"],
+        "properties": { "open_questions": { "minItems": 1 } }
+      }
+    }
+  ],
+  "$defs": {
+    "short_text": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "repository_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$"
+    },
+    "diagnosis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "suspected_areas"],
+      "properties": {
+        "description": { "$ref": "#/$defs/short_text" },
+        "suspected_areas": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/suspected_area" }
+        }
+      }
+    },
+    "suspected_area": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "reason"],
+      "properties": {
+        "file": { "$ref": "#/$defs/repository_path" },
+        "reason": { "$ref": "#/$defs/short_text" }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["REPRODUCED", "PARTIALLY_REPRODUCED", "NOT_REPRODUCED", "NOT_ATTEMPTED"]
+        },
+        "notes": { "$ref": "#/$defs/short_text" }
+      }
+    }
+  }
+}
